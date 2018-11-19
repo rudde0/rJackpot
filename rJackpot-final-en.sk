@@ -787,9 +787,9 @@ command /jackpot [<text>] [<integer>] [<text>]:
 				loop 17 times:
 					make gui slot 0+loop-value of player with {@glassDeco} named "&6{@glassName}" to nothing
 			make gui slot 0 of player with {@glassDeco} named "&6{@glassName}" to nothing
-			make gui slot 1 of player with paper named "&6&l{@classicPot} Oyna &e&l»" with lore "&7{@classicPot}, &6{@PotDakika} &7dakikada bir yenilenir!||&7Katılımda kişi sınırı yoktur.||||&7Tek seferde &6{@PotMaxGiris} &7bilet ekleyebilirsin.||&7Her biletin ücreti: &6${@ticketPrice}" to run player command "{@classicPot}"
-			make gui slot 4 of player with paper named "&6&lfastPot Oyna &e&l»" with lore "&7fastPot, &6{@fasterPotMins} &7dakikada bir yenilenir!||&7Bu oyun, &6{@fasterPotMaxParticipant} &7kişi katıldıktan sonra girişlere kapanır.||||&7Burada bir rounda en fazla &6{@fasterPotMaxGiris} &7bilet ekleyebilirsin!||&7Her biletin ücreti: &6${@fasterticketPrice}" to run player command "jackpotfaster"
-			make gui slot 7 of player with paper named "&6&lfastestPot Oyna &e&l»" with lore "&7fastestPot, &6anında &7para devreder!||&7Bu oyun, &6{@fastestPotMaxParticipant} &7kişi katıldıktan sonra parayı devreder.||||&7Burada bir rounda en fazla &6{@fastestPotMaxGiris} &7bilet ekleyebilirsin!||&7Her biletin ücreti: &6${@fastestticketPrice}" to run player command "jackpotfastest"
+			make gui slot 1 of player with paper named "&6&l{@classicPot} Oyna &e&l»" with lore "&7{@classicPot}, refreshes in &6{@PotDakika} &7minutes!||&7No participant limit.||||&7You can add &6{@PotMaxGiris} &7tickets once.||&7Every ticket's price: &6${@ticketPrice}" to run player command "{@classicPot}"
+			make gui slot 4 of player with paper named "&6&lfastPot Oyna &e&l»" with lore "&7fastPot, &refreshes in &6{@fasterPotMins} &7minutes!||&7This game will start, &6{@fasterPotMaxParticipant} &7participants have join.||||&7You can only add &6{@fasterPotMaxGiris} &7tickets once!||&7Every ticket's price: &6${@fasterticketPrice}" to run player command "jackpotfaster"
+			make gui slot 7 of player with paper named "&6&lfastestPot Oyna &e&l»" with lore "&7fastestPot, &6instantly &7draws winner!||&7This game will start, &6{@fastestPotMaxParticipant} &7participants have join.||||&7You can only add &6{@fastestPotMaxGiris} &7tickets once!||&7Every ticket's price: &6${@fastestticketPrice}" to run player command "jackpotfastest"
 			make gui slot 9 of player with book named "&6&lAçıklama &e&l»" with lore "&7Click to view the system description." to run:
 				message "&6&l:"
 				message "&7Participants buys ticket."
