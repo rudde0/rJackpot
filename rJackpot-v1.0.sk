@@ -1,0 +1,328 @@
+#				#########################################################################################################################								
+#				#                  _      _         ___    _   _                _____                _                    _   			#								
+#				#                 ( )    ( )       (  _`\ ( ) ( )              (___  )              ( )                  ( )_ 			#
+#				# _ __  _   _    _| |   _| |   __  | (_(_)| |/'/'    ______        | |   _ _    ___ | |/')  _ _      _   | ,_)			#								
+#				#( '__)( ) ( ) /'_` | /'_` | /'__`\`\__ \ | , <     (______)    _  | | /'_` ) /'___)| , <  ( '_`\  /'_`\ | |  			#								
+#				#| |   | (_) |( (_| |( (_| |(  ___/( )_) || |\`\               ( )_| |( (_| |( (___ | |\`\ | (_) )( (_) )| |_ 			#								
+#				#(_)   `\___/'`\__,_)`\__,_)`\____)`\____)(_) (_)              `\___/'`\__,_)`\____)(_) (_)| ,__/'`\___/'`\__)			#								
+#				#                                                                                          | |                			#								
+#				#                                                                                          (_)                			#								
+#				#########################################################################################################################								
+# 										
+# Çalışması için Skript ile hooklanabilen bir Ekonomi plugini (Essentials Economy, iConomy vb. bir plugin) gereklidir.
+# Sistem biletlerden rastgele birini seçer. Ne kadar çok bilet satın alınırsa o kadar çok kazanma şansınız olur.
+# İletişim için Discord: rudde#7859
+options:
+	1biletPara: 100000 #Her biletin fiyatı
+	restartDakika: 30 #Kaç dakikada bir yeni round başlasın?
+	komutAliaslar: /pot, /kumar #Alias listesi
+	prefix: &7(&crJackpot&7) &7 #Mesaj prefixi
+	otoMesaj: on #Otomatik mesaj (on=açık | off=kapalı)
+	mesajDelay: 5 #Kaç dakikada bir bilgi mesajı yollasın?
+	duyuruMesaj: &7Jackpota katılmak için: &6/jackpot #Duyuru mesajı
+	adminPanel: rSK.Jackpot.Admin #Admin Komutlarını kullanabilme, görüntüleme
+	saniyeDraw: 60 #/jackpot draw komutunu kullandıktan sonra kaç saniye sonra pottaki para kazananını bulsun?
+	birDahaKatilabilsin: off #Oyuncu bir kez (/jackpot yatır [miktar]) komutunu uyguladıktan sonra tekrar komutu kullanabilsin mi? (on=evet off=hayır)
+	dolum: &l> #Jackpot 10 saniye kala çekilirken hangi işaret beyazdan yeşile dolsun?
+	sohbetKapatilsinmi: on #Pot çekiliyorken sohbet ekranına mesaj gönderilebilsin mi? (on=açık | off=kapalı)
+	enFazlaBilet: 10 #Tek seferde oyuncu en fazla kaç bilet ekleyebilsin?
+# Burdan sonrası, kaynak kodlarını içerir. Kaynak kodlarını değiştirmeyi düşünüyorsanız skript yedeğini almayı unutmayın.
+	
+variables:
+	{potKazanc.%player%} = 0
+	
+on script load:
+	set {kalanDk} to {@restartDakika}
+	set {kalanSn} to 1
+	broadcast "{@prefix}&6rSK Jackpot &7aktifleştirildi! Jackpota katılmak için: &6/jackpot"
+	set {otoMesajReq} to {@otoMesaj}
+	if {otoMesajReq} is on:
+		set {otoMesajReq2} to on
+	else:
+		set {otoMesajReq2} to off
+	
+every {@mesajDelay} minutes:
+	if {otoMesajReq2} is on:
+		broadcast "{@prefix}{@duyuruMesaj}"
+		
+on logging in:
+	if {bilgilendirmeMesaj.%player%} is on:
+		wait 10 seconds
+		message "{@prefix}                      &4&lBAD SUPPORT:"
+		message "{@prefix}Jackpot oynarken oyundan çıktığın için &6$%{yatirilanHatirlat.%player%}% &7değerinde paranın yarısını sana iade ettik."
+		add {yatirilanHatirlat.%player%}/2 to player's balance
+		set {bilgilendirmeMesaj.%player%} to off
+		clear {yatirilanHatirlat.%player%}
+		
+on quit:
+	if {katilanlar::*} contains player:
+		remove player from {katilanlar::*}
+		set {yatirilanHatirlat.%player%} to {yatirilanMiktar.%player%}
+		subtract {yatirilanMiktar.%player%} from {lottoPot}
+		loop {yatirilanBilet.%player%} times:
+			remove player from {biletListe::*}
+		clear {yatirilanBilet.%player%}
+		set {bilgilendirmeMesaj.%player%} to on 
+		clear {katilmistim.%player%}
+		clear {yatirilanMiktar.%player%}
+		
+on chat:
+	if {Sohbet} is "Kapali":
+		cancel event
+		message "{@prefix}Pot çekiliyorken sohbete mesaj gönderemezsin!"
+		
+every second:
+	subtract 1 from {kalanSn}
+	if {kalanSn} is smaller than 1:
+		add 59 to {kalanSn}
+		subtract 1 from {kalanDk}
+	if {kalanSn} is 1:
+		if {kalanDk} is 0:
+			if {katilanlar::*} is not set:
+				broadcast "{@prefix}Jackpota katılım olmadığı için süre başa sarıldı."
+				set {kalanDk} to {@restartDakika}
+				set {kalanSn} to 1
+			else:
+				wait 1 tick
+				if {@sohbetKapatilsinmi} is on:
+					set {Sohbet} to "Kapali"
+				set {Cekiliyor} to 1
+				send "&6&lBilgi &8&l» &7Jackpot &610 saniye &7sonra çekiliyor!" to all players
+				set {PotDoldu} to 1
+				set {PotKapandi} to 1
+				wait 10 seconds
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "				
+				broadcast "&7Pot kazananı seçiliyor."
+				broadcast "&a{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "				
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "				
+				broadcast "&7Pot kazananı seçiliyor.."
+				broadcast "&a{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "				
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "				
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "				
+				broadcast "&7Pot kazananı seçiliyor."
+				broadcast "&a{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "				
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "				
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "				
+				broadcast "&7Pot kazananı seçiliyor.."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "				
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "				
+				broadcast "&7Pot kazananı seçiliyor."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "
+				broadcast "&7Pot kazananı seçiliyor.."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"	
+				broadcast " "
+				broadcast "&7Pot kazananı seçiliyor."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"	
+				broadcast " "
+				broadcast "&7Pot kazananı seçiliyor.."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"	
+				broadcast " "
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"		
+				broadcast " "
+				broadcast "&7Pot kazananı seçiliyor."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&b&lJackpot&6&m----------&6-"
+				broadcast " "
+				wait 1 second
+				loop 20 times:
+					broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"		
+				broadcast " "
+				broadcast "&7Pot kazananı seçiliyor.."
+				broadcast "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				broadcast "&7(Devredilecek Para: &6%{mevcutPot}%&7)"
+				broadcast " "
+				broadcast "&6&m-----------&5&lJackpot&6&m----------&6-"
+				broadcast " "
+				wait 1 second
+				loop {biletListe::*}:
+					set {Kazanan} to random element of {biletListe::*}
+				broadcast "{@prefix}&6Tebrikler &c%{Kazanan}%&6!"
+				broadcast "{@prefix}&6%{mevcutPot}% değerindeki potu %{yatirilanMiktar.%{Kazanan}%}% parayla kazanarak"
+				broadcast "{@prefix}&6toplamda &c$%{mevcutPot}-{yatirilanMiktar.%{Kazanan}%}% &6kâr yaptı!"
+				broadcast "{@prefix}&6Bu round katılanlar: &7%{katilanlar::*}%"
+				execute console command "eco give %{Kazanan}% %{mevcutPot}%"
+				add {mevcutPot} to {potKazanc.%{Kazanan}%}
+				clear {mevcutPot}
+				clear {katilanlar::*}
+				clear {biletListe::*}
+				clear {Sohbet}
+				loop all players:
+					clear {yatirilanMiktar.%loop-player%}
+					clear {katilmistim.%loop-player%}
+				wait 5 seconds
+				broadcast "{@prefix}Jackpota katılmak için &6/jackpot &7yazabilirsin!"
+				set {kalanDk} to {@restartDakika}
+				set {kalanSn} to 1
+	
+command /jackpot [<text>] [<integer>]:
+	aliases: {@komutAliaslar}
+	trigger:
+		if arg 1 is not set:
+			message "{@prefix} &6Jackpot Komutları {@prefix}"
+			message "&6/jackpot ne &c-> &6Açıklama"
+			message "&6/jackpot yatır [miktar] &c-> &6Bilet yatırma"
+			message "&6/jackpot durum &c-> &6Şuanki pot hakkında bilgiler"
+			message "&6/jackpot kazanç &c-> &6Şuana kadarki kârınız"
+			if player has permission "{@adminPanel}":
+				message "&6/jackpot başlat &c-> &6Zamanı sıfırlar ve hemen potu başlatır"
+				message "&6/jackpot ekstra [miktar] &c-> &6Pota ekstra para ekler"
+				message "&6/jackpot bakım &c-> &6Jackpotu kapatır (açmak istersen tekrar yaz)"
+		else if arg 1 is not "ne" or "yatır" or "yatir" or "durum" or "başlat" or "baslat" or "ekstra" or "kazanc" or "kazanç" or "sifirla" or "sıfırla" or "draw" or "bakım" or "bakim" or "sohbet":
+			execute player command "/jackpot"
+		else if arg 1 is "ne":
+			message "{@prefix}Jackpot nedir:"
+			message "&7Herkes ortaya ${@1biletPara} değerinde biletler atar."
+			message "&7ne kadar çok bilet atarsan o kadar fazla kazanma şansın olur."
+			message "&7ama unutma ki %%99.99 şansla kaybedeceğin gibi %%0.01 şansla"
+			message "&7kazanabilirsin."
+		else if arg 1 is "yatır" or "yatir":
+			if arg 2 is not set:
+				execute player command "/jackpot"
+			else if arg 2 is smaller than 1:
+				execute player command "/jackpot"
+			else:
+				if arg 2 is higher than {@enFazlaBilet}:
+					message "{@prefix}Tek seferde en fazla &6{@enFazlaBilet} &7tane bilet satın alabilirsin."
+					stop
+				if player's balance is higher than {@1biletPara}*arg 2:
+					if {@birDahaKatilabilsin} is off:
+						if {katilmistim.%player%} is set:
+							message "{@prefix}Jackpota sadece bir kere para yatırabilirsin!"
+							stop
+					add arg 2 to {yatirilanBilet.%player%}
+					loop arg 2 times:
+						add player to {biletListe::*}
+					add {@1biletPara}*arg 2 to {mevcutPot}
+					add {@1biletPara}*arg 2 to {yatirilanMiktar.%player%}
+					subtract {@1biletPara}*arg 2 from {potKazanc.%player%}
+					subtract {@1biletPara}*arg 2 from player's balance
+					if {katilmistim.%player%} is not set:
+						add player to {katilanlar::*}
+						set {katilmistim.%player%} to on
+					broadcast "{@prefix}&6%player% &7pota &6+%arg 2% bilet &7ekledi! (Dönen para: &6$%{mevcutPot}%&7)"
+				else:
+					message "{@prefix}+%arg 2% bilet eklemek için &6$%{@1biletPara} * arg 2% &7paran olmalı."
+		else if arg 1 is "durum":
+			message "{@prefix}Katılanlar: &6%{katilanlar::*}%"
+			message "{@prefix}Devredilcek para: &6$%{mevcutPot}%"
+			message "{@prefix}Çekilmesine kalan süre: &6%{kalanDk}%dakika %{kalanSn}%saniye"
+			if {yatirilanMiktar.%player%} is set:
+				message "{@prefix}Senin yatırdığın para: &6$%{yatirilanMiktar.%player%}%"
+		else if arg 1 is "kazanç" or "kazanc":
+			message "{@prefix}Pottan toplam kârınız: &6$%{potKazanc.%player%}%"
+		else if arg 1 is "başlat" or "baslat":
+			if player has permission "{@adminPanel}":
+				message "{@prefix}Başarılı! Jackpot birazdan çekilecek."
+				wait 5 seconds
+				broadcast "{@prefix}Jackpot &6{@saniyeDraw} saniye &7sonra çekilecek!"
+				set {kalanDk} to 0
+				set {kalanSn} to {@saniyeDraw}
+				set {PotKapandi} to {@saniyeDraw}
+			else:
+				message "{@prefix}Yetkin yok."
+		else if arg 1 is "ekstra":
+			if player has permission "{@adminPanel}":
+				if arg 2 is not set:
+					execute player command "/jackpot"
+				else:
+					broadcast "{@prefix}&6%player% &7jackpota ekstra &6$%arg 2% &7ekledi!"
+					add arg 2 to {mevcutPot}
+			else:
+				message "{@prefix} Yetkin yok."
+		else if arg 1 is "sifirla" or "sıfırla":
+			if player has permission "{@adminPanel}":
+				message "{@prefix}Tüm bilgiler sıfırlandı!"
+				clear {mevcutPot}
+				clear {katilanlar::*}
+				loop all players:
+					clear {yatirilanMiktar.%loop-player%}
+					clear {katilmistim.%loop-player%}
+				broadcast "{@prefix}Jackpota katılmak için &6/jackpot &7yazabilirsin!"
+				set {kalanDk} to {@restartDakika}
+				set {kalanSn} to 1
+			else:
+				message "{@prefix}Yetkin yok."
+		else if arg 1 is "bakim" or "bakım":
+			if player has permission "{@adminPanel}":
+				if {PotBakim} is not set:
+					broadcast "{@prefix}Jackpot bir süreliğine &6%player% &7tarafından bakıma alındı!"
+					set {PotKapandi} to 1
+					set {KalanDk} to -1
+					set {PotBakim} to on
+				else:
+					broadcast "{@prefix}Jackpot tekrar aktif!"
+					set {PotKapandi} to 0
+					set {KalanDk} to {@restartDakika}
+					set {KalanSn} to 1
+					clear {PotBakim}
+		else if arg 1 is "sohbet":
+			if player has permission "{@adminPanel}":
+				clear {Sohbet}
+				message "{@prefix}Başarıyla sohbet açıldı."
