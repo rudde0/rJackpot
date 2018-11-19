@@ -1,0 +1,1407 @@
+#																																					
+#				#########################################################################################################################			
+#				#                  _      _         ___    _   _                _____                _                    _   			#			
+#				#                 ( )    ( )       (  _`\ ( ) ( )              (___  )              ( )                  ( )_ 			#			
+#				# _ __  _   _    _| |   _| |   __  | (_(_)| |/'/'    ______        | |   _ _    ___ | |/')  _ _      _   | ,_)			#			
+#				#( '__)( ) ( ) /'_` | /'_` | /'__`\`\__ \ | , <     (______)    _  | | /'_` ) /'___)| , <  ( '_`\  /'_`\ | |  			#			
+#				#| |   | (_) |( (_| |( (_| |(  ___/( )_) || |\`\               ( )_| |( (_| |( (___ | |\`\ | (_) )( (_) )| |_ 			#			
+#				#(_)   `\___/'`\__,_)`\__,_)`\____)`\____)(_) (_)              `\___/'`\__,_)`\____)(_) (_)| ,__/'`\___/'`\__)			#			
+#				#                                                                                          | |                			#			
+#				#                                                                                          (_)                			#			
+#				#########################################################################################################################			
+#  Çalışması için TuSKe, Vault eklentileri ve Skript ile hooklanabilen bir Ekonomi plugini (Essentials Economy, iConomy vb. bir plugin) gereklidir. 
+#                Sistem biletlerden rastgele birini seçer. Ne kadar çok bilet satın alınırsa o kadar çok kazanma şansınız olur.	
+#İlerde yapılacak olanlar listesi:
+#	» fasterPot, fastestPot isimlerini tek ayarla değiştirme
+#Bilinen hatalar:
+#	» SkRambled ile rJackpotTR uyumlu çalışamıyor. rJackpotTR oyun içinden reloadlandığı zaman SkRambled birçok hata veriyor. SkRambled yüklüyse siliniz.
+
+options:
+	biletDelay: on #Kişi, jackpota para yatırdığı zaman parayı yatırdığı mesajı 10 saniye gecikmeli mi gitsin yoksa hemen mi gitsin? (on=10 saniye gecikmeli gitsin | off=Hemen gitsin)
+	delaydaveMesajTeslimEt: on #Kişi, jackpota para yatırdığı zaman parasının işleme alındığı mesajı gitsin mi gitmesin mi? biletDelay ayarı kapalıysa bu ayarın bir önemi yok. (on=Bilgi verilsin | off=Verilmesin)
+	actionBarMesajlari: on #Mesajlar aşağıdan mı gönderilsin sohbetten mi? (on=Aşağıdan | off=Sohbetten)
+	PotBiletPara: 100000 #Her biletin fiyatı
+	PotDakika: 60 #Kaç dakikada bir yeni round başlasın?
+	classicPot: Klasik Pot #Tanıtımdaki classicPot'un adı ne olarak ayarlansın?
+	komutAliaslar: /pot, /kumar, /jp #Alias listesi
+	prefix: &0[&6&lJackPot&0] &7 #Mesaj prefixi
+	otoMesaj: on #Otomatik mesaj (on=açık | off=kapalı)
+	mesajDelay: 3 #Kaç dakikada bir bilgi mesajı yollasın?
+	acilisDuyuru: &9Jackpota katılmak için: &a/jackpot #Duyuru mesajı
+	adminPanel: rSK.Jackpot.Admin #Admin Komutlarını kullanabilme, görüntüleme
+	birDahaKatilabilsin: off #Oyuncu bir kez (/jackpot yatır [miktar] [classic/faster/fastest]) komutunu uyguladıktan sonra tekrar komutu kullanabilsin mi? (on=evet off=hayır)
+	saniyeDraw: 60 #Jackpot draw komutunu kullanınca jackpot kaç saniye sonra çekilsin?
+	dolum: &l█ #Jackpot 10 saniye kala çekilirken hangi işaret beyazdan yeşile dolsun?
+	sohbetKapatilsinmi: off #Pot çekiliyorken sohbet ekranına mesaj gönderilebilsin mi? (on=açık | off=kapalı)
+	jackpotDuyurulari: on #Oyuncu ayarlardan jackpot duyurularını görebilsin mi? (on=açık | off=kapalı) * Kendisi iki seçimde de jackpot menüsünden bu ayarı kapatıp açabilir.
+	PotMaxGiris: 10 #Oyuncu tek seferde jackpota en fazla kaç bilet ekleyebilsin?
+	girisBilgi: on #Oyuncu sunucuya bağlandığında rJackpot bildirim mesajı alsın mı?
+	MinimumKisi: 2 #Jackpota en az kaç kişi girdiğinde round oynansın?
+	cikisAffiDakika: 10 #Oyuncu, oyuna kaç dakika içerisinde bağlanırsa parasını geri iade alabilsin? (cikisAffiSistem kapalıysa işe yaramaz)
+	cikisAffiSistem: on #Oyuncu, oyuna zamanında bağlanırsa parasını pottan geri direkt çekebilsin mi yoksa her zaman sadece yarısını mı çekebilsin?
+	guiSistem: on #Yeni! Jackpot GUI ve Chat sistemi ile çalışsın istiyorsanız on, sadece Chat sistemi üzerinden çalışsın istiyorsanız off yapın.
+	chatKapatilsin: off #Jackpot çekilirken oyuncular sohbete mesaj gönderebilsin mi?
+	# guiSistemi açık tutacaksanız aşağıdaki ayarlamaları da yapın.
+	# GUI Süslemesi
+	glassBaslik: * #Jackpot guilerinde bulunan süsleme başlıkları ne olsun?
+	glassSusleme: black stained glass pane #Jackpot guilerinde bulunan süslemelerin tipi ne olsun?
+	# Admin Panel
+	klikBonus: 100000 #classicPot, fasterPot, fastestPot'un admin panelindeki ekstra para eklemede, sol klik pota kaç dolar ekleme yapsın?
+	skriptDosyaAd: rJackpotTR.sk
+	# fasterPot Ayarlamaları:
+	fasterPotMaxKisi: 5 #Kaç kişi girdikten sonra pot kapansın?
+	fasterPotDakika: 10 #Kaç dakikada bir fasterPot, kazanana parayı devretme işlemine başlasın?
+	fasterPotBiletPara: 250000 #fasterPot'ta bir bilet başı ne kadar ücret kesilsin?
+	fasterPotMaxGiris: 5 #Bir kişi, en fazla kaç kere pota bilet ekleyebilsin?
+	fasterPotMaxGiris: 5 #Oyuncu tek seferde fasterPota en fazla kaç bilet ekleyebilsin?
+	fasterMinimumKisi: 2 #En az kaç oyuncu katılınca pot çekilsin? (En düşük 2 tavsiye edilir)
+	# fastestPot Ayarlamaları:
+	fastestPotMaxKisi: 3 #Kaç kişi girdikten sonra pot direkt olarak kapatılıp kazanana parayı devretme işlemine başlasın?
+	fastestPotBiletPara: 500000 #fastestPot'ta bir bilet başı ne kadar ücret kesilsin?
+	fastestPotMaxGiris: 5 #Bir kişi, en fazla kaç kere pota bilet ekleyebilsin?
+	fastestPotMaxGiris: 3 #Oyuncu tek seferde fasterPota en fazla kaç bilet ekleyebilsin?
+	fastestPotMinKisi: 2 #Normalde başlamıyor fakat, admin panelindeyken en az kaç kişiyle zorunlu başlatılabilsin?
+	
+# Önemli: guiSistem off olarak ayarlanırsa fasterPot, fastestPot devre dışı kalır.
+# fasterPot nedir? »
+#  Jackpotun hızlandırılmış sürümüdür. Yukardan kaç dakikada bir döneceğini ve en fazla kaç kişinin katılabileceğini değiştirebilirsiniz.
+# fastestPot nedir? »
+#  fasterPot'tan daha hızlıdır, en fazla kaç kişi girebiliyorsa; o kadar kişi girdikten hemen sonra para devretme süresine başlanır.
+# Burdan sonrası, kaynak kodlarını içerir. Kaynak kodlarını değiştirmeyi düşünüyorsanız skript yedeğini almayı unutmayın.
+	
+variables:
+	{potKazanc.%player%} = 0
+		
+on script load:
+	set {kalanDkFaster} to {@fasterPotDakika}
+	set {kalanSnFaster} to 1
+	set {kalanDk} to {@PotDakika}
+	set {kalanSn} to 1
+	if {@actionBarMesajlari} is on:
+		wait 3 seconds
+		set action bar of all players to coloured "&f&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&6&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&l&6&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJ&6&lackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJa&6&lckpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJac&6&lkpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJack&6&lpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackp&6&lot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackpo&6&lt"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackpo&6&lt"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackp&6&lot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJack&6&lpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJac&6&lkpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJa&6&lckpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJ&6&lackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&l&6&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&6&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&f&lJackpot"
+		wait 0.1 second
+		set action bar of all players to coloured "&6&lJackpot"
+		wait a second
+	else:
+		broadcast "{@prefix}Jackpot aktif! &cJackpota katılmak için: &a/jackpot"
+	set {otoMesajReq} to {@otoMesaj}
+	if {otoMesajReq} is on:
+		set {otoMesajReq2} to on
+	else:
+		set {otoMesajReq2} to off
+	
+every {@mesajDelay} minutes:
+	if {otoMesajReq2} is on:
+		broadcast "{@prefix}{@acilisDuyuru}"
+		
+on join:
+	if {@girisBilgi} is on:
+		if {bilgilendirmeMesaj.%player%} is off:
+			if {@actionBarMesajlari} is on:
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o"
+				wait 0.2 second
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/"
+				wait 0.2 second
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/p"
+				wait 0.2 second
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/po"
+				wait 0.2 second
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/pot"
+				wait 0.2 second
+				set action bar of player to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/pot_"
+				wait 0.2 second
+				set action bar of all players to coloured "{@prefix} &cDaha fazla bilgi için: &a&o/pot"
+			else:
+				message "{@prefix} Yeni nesil &bJackpot sistemi... &cDaha fazla bilgi için: &a&o/pot"
+		
+on first join:
+	add player to {mesajlar.%player%}
+	
+on logging in:
+	if {bilgilendirmeMesaj.%player%} is on:
+		clear {bilgilendirmeMesaj.%player%}
+		wait 5 seconds
+		message "                   &4&lSportmenliğe aykırı davranış"
+		if {@cikisAffiSistem} is on:
+			if {cikisAffiSistem.%player%} is set:
+				message "{@prefix}Jackpot oynanırken oyundan çıkmamaya özen gösterin. Oyundan çıktıktan sonra &6{@cikisAffiDakika} dakika &7içerisinde tekrar giriş yapmazsanız paranızın sadece yarısı iade edilir."
+				clear {cikisAffiSistem.%player%}
+				if {yatirilanHatirlat.%player%} is set:
+					message "&7Zamanında girdiğiniz için &6$%{yatirilanHatirlat.%player%}% &7iade edildi."
+					add {yatirilanHatirlat.%player%} to player's balance
+					clear {yatirilanHatirlat.%player%}
+					log "(##%{fasterPotSayi}% - CLASSIC) Jackpot > %player% jackpot oynanırken oyundan çıktı!" to "OlayLoglari.log"
+					stop
+				else if {yatirilanHatirlatFaster.%player%} is set:
+					message "&7Zamanında girdiğiniz için &6$%{yatirilanHatirlatFaster.%player%}% &7iade edildi."
+					add {yatirilanHatirlatFaster.%player%} to player's balance
+					clear {yatirilanHatirlatFaster.%player%}
+					log "(##%{fasterPotSayi}% - FASTER) Jackpot > %player% jackpot oynanırken oyundan çıktı!" to "OlayLoglari.log"
+					stop
+				else if {yatirilanHatirlatFastest.%player%} is set:
+					message "&7Zamanında girdiğiniz için &6$%{yatirilanHatirlatFastest.%player%}% &7iade edildi."
+					add {yatirilanHatirlatFastest.%player%} to player's balance
+					clear {yatirilanHatirlatFastest.%player%}
+					log "(##%{fasterPotSayi}% - FASTEST) Jackpot > %player% jackpot oynanırken oyundan çıktı!" to "OlayLoglari.log"
+					stop
+	if {yatirilanHatirlat.%player%} is set:
+		message "&7Jackpot oynarken oyundan çıktığın için &6$%{yatirilanHatirlat.%player%}% &7değerinde paranın yarısını sana iade ettik."
+		add {yatirilanHatirlat.%player%}/2 to player's balance
+		clear {yatirilanHatirlat.%player%}
+	else if {yatirilanHatirlatFaster.%player%} is set:
+		message "&7Hızlı Pot oynarken oyundan çıktığın için &6$%{yatirilanHatirlatFaster.%player%}% &7değerinde paranın yarısını sana iade ettik."
+		add {yatirilanHatirlatFaster.%player%}/2 to player's balance
+		clear {yatirilanHatirlatFaster.%player%}
+	else if {yatirilanHatirlatFastest.%player%} is set:
+		message "&7Çok Hızlı Pot oynarken oyundan çıktığın için &6$%{yatirilanHatirlatFastest.%player%}% &7değerinde paranın yarısını sana iade ettik."
+		clear {yatirilanHatirlatFastest.%player%}
+		
+on quit:
+	if {katilanlar::*} contains player:
+		remove player from {katilanlar::*}
+		set {yatirilanHatirlat.%player%} to {yatirilanMiktar.%player%}
+		subtract {yatirilanMiktar.%player%} from {mevcutPot}
+		loop {yatirilanBilet.%player%} times:
+			remove player from {biletListe::*}
+		clear {yatirilanBilet.%player%}
+		set {bilgilendirmeMesaj.%player%} to on 
+		clear {katilmistim.%player%}
+		clear {yatirilanMiktar.%player%}
+		clear {katilimFaster.%player%}
+		clear {sonucFaster.%player%}
+		clear {ticketToplamYuzdeFaster.%player%}
+		clear {katilimFaster.%player%}
+		clear {yatirilanHatirlatFaster.%player%}
+		clear {yatirilanBiletFaster.%player%}
+		clear {katilmistimFaster.%player%}
+		clear {ticketSansBiletleriFaster.%player%}
+		if {@cikisAffiSistem} is on:
+			set {cikisAffiSistem.%player%} to on
+			if {@actionBarMesajlari} is on:
+				set action bar of all players to coloured "{@prefix}&e%player%&7, &6{@classicPot} &7roundundayken çıkış yaptı!"
+				wait 3 seconds
+				set action bar of all players to coloured "&6{@cikisAffiSistem} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			else:
+				broadcast "{@prefix}&e%player%&7, &6{@classicPot} &7roundundayken çıkış yaptı!"
+				broadcast "&6{@cikisAffiSistem} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			wait {@cikisAffiDakika} minute
+			clear {cikisAffiSistem.%player%}
+	if {katilanlarFaster::*} contains player:
+		remove player from {katilanlarFaster::*}
+		set {yatirilanHatirlatFaster.%player%} to {yatirilanMiktarFaster.%player%}
+		subtract {yatirilanMiktarFaster.%player%} from {mevcutPotFaster}
+		loop {yatirilanBiletFaster.%player%} times:
+			remove player from {biletListeFaster::*}
+		clear {yatirilanBiletFaster.%player%}
+		set {bilgilendirmeMesaj.%player%} to on 
+		clear {katilmistimFaster.%player%}
+		clear {yatirilanMiktarFaster.%player%}
+		clear {katilimFaster.%player%}
+		clear {sonucFaster.%player%}
+		clear {ticketToplamYuzdeFaster.%player%}
+		clear {katilimFaster.%player%}
+		clear {yatirilanHatirlatFaster.%player%}
+		clear {yatirilanBiletFaster.%player%}
+		clear {katilmistimFaster.%player%}
+		clear {ticketSansBiletleriFaster.%player%}
+		if {@cikisAffiSistem} is on:
+			set {cikisAffiSistem.%player%} to on
+			if {@actionBarMesajlari} is on:
+				set action bar of all players to coloured "{@prefix}&e%player%&7, &6Hızlı Pot &7roundundayken çıkış yaptı!"
+				wait 3 seconds
+				set action bar of all players to coloured "&6{@cikisAffiDakika} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			else:
+				broadcast "{@prefix}&e%player%&7, &6Hızlı Pot &7roundundayken çıkış yaptı!"
+				broadcast "&6{@cikisAffiSistem} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			wait {@cikisAffiDakika} minute
+			clear {cikisAffiSistem.%player%}
+	if {katilanlarFastest::*} contains player:
+		remove player from {katilanlarFastest::*}
+		set {yatirilanHatirlatFastest.%player%} to {yatirilanMiktarFastest.%player%}
+		subtract {yatirilanMiktarFastest.%player%} from {mevcutPotFastest}
+		loop {yatirilanBiletFastest.%player%} times:
+			remove player from {biletListeFastest::*}
+		clear {yatirilanBiletFastest.%player%}
+		set {bilgilendirmeMesaj.%player%} to on 
+		clear {katilmistimFastest.%player%}
+		clear {yatirilanMiktarFastest.%player%}
+		clear {katilimFastest.%player%}
+		clear {sonucFastest.%player%}
+		clear {ticketToplamYuzdeFastest.%player%}
+		clear {katilimFastest.%player%}
+		clear {yatirilanHatirlatFastest.%player%}
+		clear {yatirilanBiletFastest.%player%}
+		clear {katilmistimFastest.%player%}
+		clear {ticketSansBiletleriFastest.%player%}
+		if {@cikisAffiSistem} is on:
+			set {cikisAffiSistem.%player%} to on
+			if {@actionBarMesajlari} is on:
+				set action bar of all players to coloured "{@prefix}&e%player%&7, &6Çok Hızlı Pot &7roundundayken çıkış yaptı!"
+				wait 3 seconds
+				set action bar of all players to coloured "&6{@cikisAffiDakika} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			else:
+				broadcast "{@prefix}&e%player%&7, &6Çok Hızlı Pot &7roundundayken çıkış yaptı!"
+				broadcast "&6{@cikisAffiSistem} dakika &7içerisinde tekrar bağlanmazsa parasının sadece yarısı iade edilebilecektir."
+			wait {@cikisAffiDakika} minute
+			clear {cikisAffiSistem.%player%}
+		
+on chat:
+	if {@chatKapatilsin} is on:
+		if {sohbetJackpot} is "Kapali":
+			cancel event
+			if {mesajlar.%player%} contains player:
+				message "{@prefix}Pot çekiliyorken sohbete mesaj gönderemezsin!"
+			else:
+				message "{@prefix}Jackpot mesajlarını almıyorsun fakat jackpot şuan çekiliyor olduğu için kısa bir süreliğine chati kapattık."
+		
+every second:
+	subtract 1 from {kalanSn}
+	subtract 1 from {kalanSnFaster}
+	if {kalanSnFaster} is smaller than 1:
+		add 59 to {kalanSnFaster}
+		subtract 1 from {kalanDkFaster}
+	if {kalanSn} is smaller than 1:
+		add 59 to {kalanSn}
+		subtract 1 from {kalanDk}
+	if {kalanDkFaster} is smaller than 1:
+		if {kalanSnFaster} is smaller than 2:
+			if {katilanlarFaster::*} is not set:
+				set {kalanDkFaster} to {@fasterPotDakika}
+				set {kalanSnFaster} to 1
+			else if size of {katilanlarFaster::*} is smaller than {@fasterMinimumKisi}:
+				loop all players:
+					if {katilanlarFaster::*} contains loop-player:
+						add loop-player to {_fasteriadePara::*}
+						add {yatirilanMiktarFaster.%loop-player%} to loop-player's balance
+						if {@actionBarMesajlari} is on:
+							set action bar of {_fasteriadePara::*} to coloured "{@prefix}Jackpota yeterli katılım(&6{@fasterMinimumKisi}&7) olmadığı için rounda yatırdığın parayı hesabına iade ettik."
+							wait 3 seconds
+						else:
+							send "{@prefix}Jackpota yeterli katılım(&6{@fasterMinimumKisi}&7) olmadığı için rounda yatırdığın parayı hesabına iade ettik." to {_fasteriadePara::*}
+						set {kalanDk} to {@fasterPotDakika}
+						set {kalanSn} to 1
+						set {mevcutPotFaster} to 0
+						clear {katilanlarFaster::*}
+						clear {biletListeFaster::*}
+						clear {katilanKisilerFaster}
+						clear {yatirilanMiktarFaster.%loop-player%}
+						clear {katilimFaster.%loop-player%}
+						clear {sonucFaster.%loop-player%}
+						clear {ticketToplamYuzdeFaster.%loop-player%}
+						clear {katilimFaster.%loop-player%}
+						clear {katilmistimFaster.%loop-player%}
+						clear {ticketSansBiletleriFaster.%loop-player%}
+			else if {cekilmekte} is on:
+				broadcast "{@prefix}Halihazırda bir Jackpot çekiliyor olduğu için, Hızlı Pot'a 20 saniye daha ekledik."
+				add 20 to {kalanSnFaster}
+			else:
+				wait 1 tick
+				set {CekiliyorFaster} to 1
+				if {@sohbetKapatilsinmi} is on:
+					set {sohbetJackpot} to "Kapali"
+				send "&6&lBilgi &8&l» &7Hızlı Pot &65 saniye &7sonra çekiliyor!" to all players
+				set {PotDolduFaster} to 1
+				set {PotKapandiFaster} to 1
+				set {cekilmekte} to on
+				wait 5 seconds
+				loop all players:
+					{mesajlar.%loop-player%} is on
+					add loop-player to {duyurular::*}
+				if {@actionBarMesajlari} is on:
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&lHızlı Pot» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				else:
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}	
+					send "&7Hızlı Pot kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7Hızlı Pot kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPotFaster}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+				clear {_duyurular::*}
+				wait 1 second			
+				clear {kazananBiletHashFaster::*}
+				loop {biletListeFaster::*}:
+					add 1 to {RoundSayiFaster::%loop-value%}
+					set {biletListeFaster::KazananFaster} to random element of {biletListeFaster::*}
+				add 1 to {fasterPotSayi}
+				set {_sans} to {yatirilanMiktarFaster.%{biletListeFaster::KazananFaster}%}/{mevcutPotFaster}*100
+				if {@actionBarMesajlari} is on:
+					loop 3 times:
+						set action bar of all players to coloured "&6&lHızlı Pot» &7Kazanan kişi &6&o%{biletListeFaster::KazananFaster}% &7tebrikler! &6(POT: $%{mevcutPotFaster}% ŞANS: %{_sans}%%%)"
+						wait 2 second
+				broadcast "&8&l&m---------------------------------------------"
+				broadcast " "
+				broadcast "                         &r&6&l» &c&lHızlı JackPot &6&l«"
+				broadcast "                         &7&lKAZANAN &6&l» &7&l%{biletListeFaster::KazananFaster}%"
+				broadcast "   &7Kazandığı Para &6- &7$%{mevcutPotFaster}%    &7Yatırdığı Para &6- &7$%{yatirilanMiktarFaster.%{biletListeFaster::KazananFaster}%}%"
+				broadcast "                           &7Toplam Kâr &6- &7$%{mevcutPotFaster}-{yatirilanMiktarFaster.%{biletListeFaster::KazananFaster}%}%"
+				broadcast "                               &7Şans &6- &7&l%%&7%{_sans}%"
+				broadcast " "
+				broadcast "&6(##%{fasterPotSayi}%) Bu fasterPot rounduna katılanlar: &7%{katilanlarFaster::*}%"
+				broadcast " "
+				broadcast "&8&l&m---------------------------------------------"
+				log "(##%{fasterPotSayi}% - FASTER) rJackpot > %{biletListeFaster::KazananFaster}% adlı kişi, $%{mevcutPotFaster}% kazandı!" to "OlayLoglari.log"
+				add {mevcutPotFaster} to {biletListeFaster::KazananFaster}'s balance
+				add {mevcutPotFaster} to {potKazanc.%{biletListeFaster::KazananFaster}%}
+				add {mevcutPotFaster} to {toplamKazanc.%{biletListeFaster::KazananFaster}%}
+				set {GecmisKazananFaster} to {biletListeFaster::KazananFaster}
+				set {GecmisPotFaster} to {mevcutPotFaster}
+				set {GecmisSansFaster} to {_sans}
+				set {biletListeFaster::KazananFaster} to "&6%{biletListeFaster::KazananFaster}%&7"
+				add {biletListeFaster::*} to {kazananBiletHashFaster::*}
+				set {mevcutPotFaster} to 0
+				clear {katilanlarFaster::*}
+				clear {biletListeFaster::*}
+				clear {biletListeFaster::KazananFaster}
+				clear {katilanKisilerFaster}
+				clear {CekiliyorFaster}
+				clear {PotDolduFaster}
+				clear {PotKapandiFaster}
+				clear {sohbetJackpot}
+				clear {cekilmekte}
+				loop all players:
+					clear {yatirilanMiktarFaster.%loop-player%}
+					clear {katilimFaster.%loop-player%}
+					clear {sonucFaster.%loop-player%}
+					clear {ticketToplamYuzdeFaster.%loop-player%}
+					clear {katilimFaster.%loop-player%}
+					clear {yatirilanHatirlatFaster.%loop-player%}
+					clear {yatirilanBiletFaster.%loop-player%}
+					clear {katilmistimFaster.%loop-player%}
+					clear {ticketSansBiletleriFaster.%loop-player%}
+				wait 5 seconds
+				broadcast "{@prefix}Hızlı Pota katılmak için &a/jackpot &7yazabilirsin!"
+				set {kalanDkFaster} to {@fasterPotDakika}
+				set {kalanSnFaster} to 1
+
+	if {kalanDk} is 0:
+		if {kalanSn} is smaller than 2:
+			if {katilanlar::*} is not set:
+				set {kalanDk} to {@PotDakika}
+				set {kalanSn} to 1
+			else if size of {katilanlar::*} is smaller than {@MinimumKisi}:
+				loop all players:
+					if {katilanlar::*} contains loop-player:
+						add loop-player to {_iadePara::*}
+						add {yatirilanMiktar.%loop-player%} to loop-player's balance
+						if {@actionBarMesajlari} is on:
+							set action bar of {_iadePara::*} to coloured "{@prefix}Jackpota yeterli katılım(&6{@MinimumKisi}&7) olmadığı için rounda yatırdığın parayı hesabına iade ettik."
+							wait 3 seconds
+						else:
+							send "{@prefix}Jackpota yeterli katılım(&6{@MinimumKisi}&7) olmadığı için rounda yatırdığın parayı hesabına iade ettik." to {_iadePara::*}
+						set {kalanDk} to {@PotDakika}
+						set {kalanSn} to 1
+						set {mevcutPot} to 0
+						clear {katilanlar::*}
+						clear {biletListe::*}
+						clear {biletListe::Kazanan}
+						clear {katilanKisiler}
+						clear {yatirilanMiktar.%loop-player%}
+						clear {katilim.%loop-player%}
+						clear {sonuc.%loop-player%}
+						clear {ticketToplamYuzde.%loop-player%}
+						clear {katilim.%loop-player%}
+						clear {katilmistim.%loop-player%}
+						clear {ticketSansBiletleri.%loop-player%}
+			else if {cekilmekte} is on:
+				broadcast "{@prefix}Halihazırda bir Jackpot çekiliyor olduğu için, {@classicPot}'a 20 saniye daha ekledik."
+				add 20 to {kalanSn}
+			else:
+				wait 1 tick
+				if {@sohbetKapatilsinmi} is on:
+					set {sohbetJackpot} to "Kapali"
+				set {Cekiliyor} to 1
+				broadcast "&6&lBilgi &8&l» &7Jackpot &610 saniye &7sonra çekiliyor!"
+				set {PotDoldu} to 1
+				set {PotKapandi} to 1
+				set {cekilmekte} to on
+				loop all players:
+					{mesajlar.%loop-player%} is on
+					add loop-player to {duyurular::*}
+				if {@actionBarMesajlari} is on:
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}"
+					wait 2 second
+					set action bar of {duyurular::*} to coloured "&6&l{@classicPot}» &a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}"
+				else:
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}	
+					send "&7{@classicPot} kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}&f{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					wait 2 second
+					loop 20 times:
+						send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7{@classicPot} kazananı seçiliyor.." to {duyurular::*}
+					send "&a{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}{@dolum}" to {duyurular::*}
+					send "&7(Devredilecek Para: &6$%{mevcutPot}%&7)" to {duyurular::*}
+					send " " to {duyurular::*}
+					send "&7&l&m=============================================" to {duyurular::*}
+					send " " to {duyurular::*}
+				clear {_duyurular::*}
+				clear {kazananBiletHash::*}
+				loop {biletListe::*}:
+					add 1 to {RoundSayi::%loop-value%}
+					set {biletListe::Kazanan} to random element of {biletListe::*}
+				add 1 to {classicPotSayi}
+				set {_sans} to {yatirilanMiktar.%{biletListe::Kazanan}%}/{mevcutPot}*100
+				if {@actionBarMesajlari} is on:
+					loop 3 times:
+						set action bar of all players to coloured "&6&l{@classicPot}» &7Kazanan kişi &6&o%{biletListe::Kazanan}% &7tebrikler! &6(POT: $%{mevcutPot}% ŞANS: %{_sans}%%%)"
+						wait 2 second
+				broadcast "&8&l&m---------------------------------------------"
+				broadcast " "
+				broadcast "                        &r&6&l» &c&lKlasik JackPot &6&l«"
+				broadcast "                         &7&lKAZANAN &6&l» &7&l%{biletListe::Kazanan}%"
+				broadcast "   &7Kazandığı Para &6- &7$%{mevcutPot}%    &7Yatırdığı Para &6- &7$%{yatirilanMiktar.%{biletListe::Kazanan}%}%"
+				broadcast "                           &7Toplam Kâr &6- &7$%{mevcutPot}-{yatirilanMiktar.%{biletListe::Kazanan}%}%"
+				broadcast "                               &7Şans &6- &7&l%%&7%{_sans}%"
+				broadcast " "
+				broadcast "&6(##%{classicPotSayi}%) Bu Pot rounduna katılanlar: &7%{katilanlar::*}%"
+				broadcast " "
+				broadcast "&8&l&m---------------------------------------------"
+				log "(##%{classicPotSayi}% - NORMAL) rJackpot > %{biletListe::Kazanan}% adlı kişi, $%{mevcutPot}% kazandı!" to "OlayLoglari.log"
+				add {mevcutPot} to {biletListe::Kazanan}'s balance
+				add {mevcutPot} to {potKazanc.%{biletListe::Kazanan}%}
+				add {mevcutPot} to {toplamKazanc.%{biletListe::Kazanan}%}
+				set {GecmisKazanan} to {biletListe::Kazanan}
+				set {GecmisPot} to {mevcutPot}
+				set {GecmisSans} to {_sans}
+				set {biletListe::Kazanan} to "&6%{biletListe::Kazanan}%&7"
+				add {biletListe::*} to {kazananBiletHash::*}
+				set {mevcutPot} to 0
+				clear {katilanlar::*}
+				clear {biletListe::*}
+				clear {biletListe::Kazanan}
+				clear {Cekiliyor}
+				clear {PotDoldu}
+				clear {PotKapandi}
+				clear {cekilmekte}
+				loop all players:
+					clear {yatirilanMiktar.%loop-player%}
+					clear {katilim.%loop-player%}
+					clear {sonuc.%loop-player%}
+					clear {ticketToplamYuzde.%loop-player%}
+					clear {katilim.%loop-player%}
+					clear {yatirilanHatirlat.%loop-player%}
+					clear {yatirilanBilet.%loop-player%}
+					clear {katilmistim.%loop-player%}
+				wait 5 seconds
+				broadcast "{@prefix}Pota katılmak için &6/jackpot &7yazabilirsin!"
+				set {kalanDk} to {@PotDakika}
+				set {kalanSn} to 1
+	
+command /jackpot [<text>] [<integer>] [<text>]:
+	aliases: {@komutAliaslar}
+	trigger:
+		if {@guiSistem} is off:
+			if arg 1 is not set:
+				message "{@prefix} &6Jackpot Komutları {@prefix}"
+				message "&6/jackpot ne &c-> &6Açıklama"
+				message "&6/jackpot yatır [miktar] &c-> &6Bilet yatırma"
+				message "&6/jackpot durum &c-> &6Şuanki pot hakkında bilgiler"
+				message "&6/jackpot kazanç &c-> &6Şuana kadarki kârınız"
+				message "&6/jackpot mesaj &c-> &6Chatte jackpot mesajlarını görüp görmeme ayarı"
+				if player has permission "{@adminPanel}":
+					message "&6/jackpot başlat &c-> &6Zamanı sıfırlar ve hemen potu başlatır"
+					message "&6/jackpot ekstra [miktar] &c-> &6Pota ekstra para ekler"
+					message "&6/jackpot bakım &c-> &6Jackpotu kapatır (açmak istersen tekrar yaz)"
+			else if arg 1 is not "mesaj" or "ne" or "yatır" or "yatir" or "durum" or "başlat" or "baslat" or "ekstra" or "kazanc" or "kazanç" or "sifirla" or "sıfırla" or "draw" or "bakım" or "bakim" or "sohbet":
+				execute player command "/jackpot"
+			else if arg 1 is "mesaj":
+				if {mesajlar.%player%} contains player:
+					remove player from {mesajlar.%player%}
+					message "{@prefix}Artık jackpot dolum mesajları almayacaksınız."
+				else:
+					loop 10 times:
+						subtract player from {mesajlar.%player%}
+					add player to {mesajlar.%player%}
+					message "{@prefix}Tekrardan jackpot dolum mesajları alacaksınız."
+			else if arg 1 is "ne":
+				message "{@prefix}Jackpot nedir:"
+				message "&7Herkes ortaya ${@PotBiletPara} değerinde biletler atar."
+				message "&7ne kadar çok bilet atarsan o kadar fazla kazanma şansın olur."
+				message "&7ama unutma ki %%99.99 şansla kaybedeceğin gibi %%0.01 şansla"
+				message "&7kazanabilirsin."
+			else if arg 1 is "yatır" or "yatir":
+				if arg 2 is not set:
+					execute player command "/jackpot"
+				else if arg 2 is smaller than 1:
+					execute player command "/jackpot"
+				else:
+					if player's balance is higher than {@PotBiletPara}*arg 2:
+						if {@birDahaKatilabilsin} is off:
+							if {katilmistim.%player%} is set:
+								message "{@prefix}Round başına sadece bir seferliğinde para yatırabilirsin!"
+								stop
+						add arg 2 to {yatirilanBilet.%player%}
+						loop arg 2 times:
+							add player to {biletListe::*}
+						add {@PotBiletPara}*arg 2 to {mevcutPot}
+						add {@PotBiletPara}*arg 2 to {yatirilanMiktar.%player%}
+						subtract {@PotBiletPara}*arg 2 from {potKazanc.%player%}
+						subtract {@PotBiletPara}*arg 2 from player's balance
+						add arg 2 to {guncelBiletSayisi.%player%}
+						if {katilmistim.%player%} is not set:
+							add player to {katilanlar::*}
+							set {katilmistim.%player%} to on
+						if {@biletDelay} is on:
+							if {biletParaDelayda.%player%} is not set:
+								set {biletParaDelayda.%player%} to on
+								wait 10 seconds
+								broadcast "{@prefix}&e%player% &7pota toplam &6+%{guncelBiletSayisi.%player%}% bilet &7ekledi! (Dönen para: &6$%{mevcutPot}%&7)"
+								delete {guncelBiletSayisi.%player%}
+								delete {biletParaDelayda.%player%}
+						else:
+							broadcast "{@prefix}&e%player% &7pota &6+%arg 2% bilet &7ekledi! (Dönen para: &6$%{mevcutPot}%&7)"
+					else:
+						message "{@prefix}&6+%arg 2% &7bilet eklemek için &6$%{@PotBiletPara} * arg 2% &7paran olmalı."
+			else if arg 1 is "durum":
+				message "{@prefix}Katılanlar: &6%{katilanlar::*}%"
+				message "{@prefix}Devredilcek para: &6$%{mevcutPot}%"
+				message "{@prefix}Çekilmesine kalan süre: &6%{kalanDk}%dakika %{kalanSn}%saniye"
+				if {yatirilanMiktar.%player%} is set:
+					message "{@prefix}Senin yatırdığın para: &6$%{yatirilanMiktar.%player%}%"
+			else if arg 1 is "kazanç" or "kazanc":
+				message "{@prefix}Pottan toplam kârınız: &6$%{potKazanc.%player%}%"
+			else if arg 1 is "başlat" or "baslat":
+				if player has permission "{@adminPanel}":
+					message "{@prefix}Başarılı! Jackpot birazdan çekilecek."
+					wait 5 seconds
+					broadcast "{@prefix}Jackpot &6{@saniyeDraw} saniye &7sonra çekilecek!"
+					set {kalanDk} to 0
+					set {kalanSn} to {@saniyeDraw}
+					set {PotKapandi} to {@saniyeDraw}
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "ekstra":
+				if player has permission "{@adminPanel}":
+					if arg 2 is not set:
+						execute player command "/jackpot"
+					else:
+						broadcast "{@prefix}&e%player% &7jackpota ekstra &6$%arg 2% &7ekledi!"
+						add arg 2 to {mevcutPot}
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "sifirla" or "sıfırla":
+				if player has permission "{@adminPanel}":
+					message "{@prefix}Tüm bilgiler sıfırlandı!"
+					set {mevcutPot} to 0
+					clear {katilanlar::*}
+					clear {katilanKisilerFaster}
+					clear {kazananBiletHashFaster::KazananFasterDebug}
+					loop all players:
+						clear {yatirilanMiktar.%loop-player%}
+						clear {katilmistim.%loop-player%}
+					broadcast "{@prefix}Jackpota katılmak için &6/jackpot &7yazabilirsin!"
+					set {kalanDk} to {@PotDakika}
+					set {kalanSn} to 1
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "bakim" or "bakım":
+				if player has permission "{@adminPanel}":
+					if {PotBakim} is not set:
+						broadcast "{@prefix}Jackpot bir süreliğine &6%player% &7tarafından bakıma alındı!"
+						set {PotKapandi} to 1
+						set {KalanDk} to -1
+						set {PotBakim} to on
+					else:
+						broadcast "{@prefix}Jackpot tekrar aktif!"
+						set {PotKapandi} to 0
+						set {KalanDk} to {@PotDakika}
+						set {KalanSn} to 1
+						clear {PotBakim}
+			else if arg 1 is "sohbet":
+				if player has permission "{@adminPanel}":
+					clear {sohbetJackpot}
+					message "{@prefix}Başarıyla sohbet açıldı."
+		else:
+			if arg 1 is not set:
+				if player has permission "{@adminPanel}":
+					open virtual chest with size 3 named "     &9&lJackpot Ana Menüsü" to player
+					loop 27 times:
+						make gui slot 0+loop-value of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+					make gui slot 19 of player with book and quill named "&6&lSistem Bilgisi (Yönetici) &e&l»" with lore "&7Sistem, &6ruddeTR &7tarafından tasarlanmıştır.||&7İzinsiz kopyalanması, dağıtılması yasaktır!||&6Book and Quill &7eşyalarını ve altındaki fazladan camları sadece||&6{@adminPanel} &7yetkisi olanlar görebilir, kullanabilir.||||&7Satın almak için iletişim:||&6rudde##7859 (Discord)||&6hazar.akbuz (Skype)" to nothing
+					make gui slot 25 of player with book and quill named "&6&lSistemi Yenile (Yönetici) &e&l»" with lore "&7Proje dosyasını yeniler." to run:
+						loop all players:
+							loop-player has a gui:
+								close loop-player's inventory
+						broadcast "{@prefix}Güvenlik amaçlı herkesin menüsü kapatıldı!"
+						broadcast "{@prefix}&oSistem yenileniyor..."
+						wait a second
+						make console execute "sk reload {@skriptDosyaAd}"
+					make gui slot 22 of player with book and quill named "&6&lPot Girişlerini Durdur (Yönetici) &e&l»" with lore "&7Tıklanınca, oyuncuların jackpota girmesini engeller.||&7Tekrar tıklandığında ise bu engel kalkar." to run:
+						if player has permission "{@adminPanel}":
+							if {PotBakim} is not set:
+								if {@actionBarMesajlari} is on:
+									set action bar of player to coloured "{@prefix}Jackpot girişleri, &6%player% &7tarafından kapatıldı!"
+								else:
+									broadcast "{@prefix}Jackpot girişleri, &6%player% &7tarafından kapatıldı!"
+								set {PotKapandi} to 1
+								set {KalanDk} to -1
+								set {PotBakim} to on
+							else:
+								if {@actionBarMesajlari} is on:
+									set action bar of player to coloured "{@prefix}Jackpot girişleri, &6%player% &7tarafından açıldı!"
+								else:
+									broadcast "{@prefix}Jackpot girişleri, &6%player% &7tarafından açıldı!"
+								set {PotKapandi} to 0
+								set {KalanDk} to {@PotDakika}
+								set {KalanSn} to 1
+								clear {PotBakim}
+				else:
+					open virtual chest with size 2 named "     &9&lJackpot Ana Menüsü" to player
+					loop 17 times:
+						make gui slot 0+loop-value of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+				make gui slot 0 of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+				make gui slot 1 of player with paper named "&6&l{@classicPot} Oyna &e&l»" with lore "&7{@classicPot}, &6{@PotDakika} &7dakikada bir yenilenir!||&7Katılımda kişi sınırı yoktur.||||&7Tek seferde &6{@PotMaxGiris} &7bilet ekleyebilirsin.||&7Her biletin ücreti: &6${@PotBiletPara}" to run player command "{@classicPot}"
+				make gui slot 4 of player with paper named "&6&lHızlı Pot Oyna &e&l»" with lore "&7Hızlı Pot, &6{@fasterPotDakika} &7dakikada bir yenilenir!||&7Bu oyun, &6{@fasterPotMaxKisi} &7kişi katıldıktan sonra girişlere kapanır.||||&7Burada bir rounda en fazla &6{@fasterPotMaxGiris} &7bilet ekleyebilirsin!||&7Her biletin ücreti: &6${@fasterPotBiletPara}" to run player command "jackpotfaster"
+				make gui slot 7 of player with paper named "&6&lÇok Hızlı Pot Oyna &e&l»" with lore "&7Çok Hızlı Pot, &6anında &7para devreder!||&7Bu oyun, &6{@fastestPotMaxKisi} &7kişi katıldıktan sonra parayı devreder.||||&7Burada bir rounda en fazla &6{@fastestPotMaxGiris} &7bilet ekleyebilirsin!||&7Her biletin ücreti: &6${@fastestPotBiletPara}" to run player command "jackpotfastest"
+				make gui slot 9 of player with book named "&6&lAçıklama &e&l»" with lore "&7Sistem açıklamasını görüntülemek için tıklayın." to run:
+					message "&6&lJackpot nedir:"
+					message "&7Herkes ortaya ${@PotBiletPara} değerinde biletler atar."
+					message "&7ne kadar çok bilet atarsan o kadar fazla kazanma şansın olur."
+					message "&7ama unutma ki %%99.99 şansla kaybedeceğin gibi %%0.01 şansla"
+					message "&7kazanabilirsin."
+					message "{@prefix}Jackpot, Hızlı Pot ve Çok Hızlı Pot'un nasıl işlediğini öğrenmek için: &6/jackpot fark"
+				make gui slot 17 of player with book named "&6&lJackpot Tipleri &e&l»" with lore "&7Hızlı Pot ve Çok Hızlı Pot'ta neyin nesi?||&7Bilgi için buraya tıklayabilirsin!" to run:
+					message "&6&l{@classicPot}:"
+					message "&7Herkes ortaya &6${@PotBiletPara} &7değerinde biletler atar."
+					message "&7Para &6{@PotDakika} &7dakikada bir devreder."
+					message "&6&lHızlı Pot (HIZLI):"
+					message "&7Herkes ortaya &6${@fasterPotBiletPara} &7değerinde biletler atar."
+					message "&7Hızlı Pota en fazla &6{@fasterPotMaxGiris} &7kişi katılabilir."
+					message "&7Para &6{@fasterPotDakika} &7dakikada bir devreder."
+					message "&6&lÇok Hızlı Pot (EN HIZLI!):"
+					message "&7Herkes ortaya &6${@fastestPotBiletPara} &7değerinde biletler atar."
+					message "&7Çok Hızlı Pota en fazla &6{@fastestPotMaxGiris} &7kişi katılabilir."
+					message "&7Katılımlar dolduktan &6birkaç saniye &7sonra para devreder."
+			else if arg 1 is not "mesaj" or "yatır" or "yatir" or "ekstra" or "ekstrafaster" or "ekstrafastest" or "sifirla" or "sıfırla" or "sohbet" or "classic" or "drawfastest":
+				execute player command "/jackpot"
+			else if arg 1 is "mesaj":
+				if {mesajlar.%player%} is set:
+					clear {mesajlar.%player%}
+					message "{@prefix}Artık jackpot dolum mesajları almayacaksınız."
+				else:
+					set {mesajlar.%player%} to on
+					message "{@prefix}Tekrardan jackpot dolum mesajları alacaksınız."
+			else if arg 1 is "yatır" or "yatir":
+				if arg 2 is not set:
+					execute player command "/jackpot"
+				else if arg 2 is smaller than 1:
+					execute player command "/jackpot"
+				else:
+					if arg 3 is "classic":
+						if {PotBakim} is set:
+							if player doesn't have permission "{@adminPanel}":
+								message "{@prefix}Jackpot girişleri kapalı gözüküyor!"
+								stop
+						if arg 2 is higher than {@PotMaxGiris}:
+							message "{@prefix}{@classicPot}a tek seferde en fazla &6{@PotMaxGiris} &7bilet satın alabilirsin!"
+							stop
+						if player's balance is higher than {@PotBiletPara}*arg 2:
+							if {katilim.%player%} is higher than {@PotMaxGiris}:
+								message "{@prefix}{@classicPot}a en fazla &6{@PotMaxGiris} &7bilet ekleme girişiminde bulunabilirsin!"
+								stop
+							add arg 2 to {yatirilanBilet.%player%}
+							loop arg 2 times:
+								add player to {biletListe::*}
+							add arg 2 to {ticketSansBiletleri.%player%}
+							add {@PotBiletPara}*arg 2 to {mevcutPot}
+							add {@PotBiletPara}*arg 2 to {yatirilanMiktar.%player%}
+							subtract {@PotBiletPara}*arg 2 from {potKazanc.%player%}
+							subtract {@PotBiletPara}*arg 2 from player's balance
+							set {classicPotSayiOnceki} to {classicPotSayi}
+							if {katilim.%player%} is smaller than {@PotMaxGiris}:
+								add 1 to {katilim.%player%}
+							if {katilmistim.%player%} isn't set:
+								add player to {katilanlar::*}
+								set {katilmistim.%player%} to on
+							add arg 2 to {ClassicguncelBiletSayisi.%player%}
+							if {@biletDelay} is on:
+								if {ClassicbiletParaDelayda.%player%} is not set:
+									if {@delaydaveMesajTeslimEt} is on:
+										message "{@prefix}classicPota yatırdığınız biletler sisteme işlendi, birazdan bilgi mesajı geçilecek."
+									set {ClassicbiletParaDelayda.%player%} to on
+									wait 5 seconds
+									broadcast "{@prefix}&e%player% &7{@classicPot}a &6+%{ClassicguncelBiletSayisi.%player%}% bilet &7ekledi!"
+									broadcast "&7{@classicPot} devredilecek miktar: &6$%{mevcutPot}%"
+									delete {ClassicguncelBiletSayisi.%player%}
+									delete {ClassicbiletParaDelayda.%player%}
+							else:
+								broadcast "{@prefix}&e%player% &7{@classicPot}a &6+%arg 2% bilet &7ekledi!"
+								broadcast "&7{@classicPot} devredilecek miktar: &6$%{mevcutPot}%"
+							stop
+						else:
+							message "{@prefix}&6+%arg 2% &7bilet eklemek için &6$%{@PotBiletPara} * arg 2% &7paran olmalı."
+					if arg 3 is "faster":
+						if {PotBakim} is set:
+							if player doesn't have permission "{@adminPanel}":
+								message "{@prefix}Jackpot girişleri kapalı gözüküyor!"
+								stop
+						if arg 2 is higher than {@fasterPotMaxGiris}:
+							message "{@prefix}Hızlı Pota tek seferde en fazla &6{@fasterPotMaxGiris} &7bilet satın alabilirsin!"
+							stop
+						if {katilanKisilerFaster} is equal to {@fasterPotMaxKisi}:
+							message "{@prefix}Hızlı Pota en fazla &6{@fasterPotMaxKisi} kişi &7katılabilmektedir!"
+							stop
+						if player's balance is higher than {@fasterPotBiletPara}*arg 2:
+							if {katilimFaster.%player%} is higher than {@fasterPotMaxGiris}:
+								message "{@prefix}fasterPota en fazla &6{@fasterPotMaxGiris} &7bilet ekleme girişiminde bulunabilirsin!"
+								stop
+							add arg 2 to {yatirilanBiletFaster.%player%}
+							loop arg 2 times:
+								add player to {biletListeFaster::*}
+							add arg 2 to {ticketSansBiletleriFaster.%player%}
+							add {@fasterPotBiletPara}*arg 2 to {mevcutPotFaster}
+							add {@fasterPotBiletPara}*arg 2 to {yatirilanMiktarFaster.%player%}
+							subtract {@fasterPotBiletPara}*arg 2 from {potKazancFaster.%player%}
+							subtract {@fasterPotBiletPara}*arg 2 from player's balance
+							if {katilimFaster.%player%} is smaller than {@fasterPotMaxGiris}:
+								add 1 to {katilimFaster.%player%}
+							if {katilmistimFaster.%player%} isn't set:
+								add player to {katilanlarFaster::*}
+								set {katilmistimFaster.%player%} to on
+							add arg 2 to {FasterguncelBiletSayisi.%player%}
+							if {@biletDelay} is on:
+								if {FasterbiletParaDelayda.%player%} is not set:
+									if {@delaydaveMesajTeslimEt} is on:
+										message "{@prefix}Hızlı Pota yatırdığınız biletler sisteme işlendi, birazdan bilgi mesajı geçilecek."
+									set {FasterbiletParaDelayda.%player%} to on
+									wait 5 seconds
+									broadcast "{@prefix}&e%player% &7Hızlı Pota &6+%{FasterguncelBiletSayisi.%player%}% bilet &7ekledi!"
+									broadcast "&7Hızlı Pot devredilecek miktar: &6$%{mevcutPotFaster}%"
+									delete {FasterguncelBiletSayisi.%player%}
+									delete {FasterbiletParaDelayda.%player%}
+							else:
+								broadcast "{@prefix}&e%player% &7Hızlı Pota &6+%arg 2% bilet &7ekledi!"
+								broadcast "&7Hızlı Pot devredilecek miktar: &6$%{mevcutPotFaster}%"
+						else:
+							message "{@prefix}&6+%arg 2% &7bilet eklemek için &6$%{@fasterPotBiletPara} * arg 2% &7paran olmalı."
+					if arg 3 is "fastest":
+						if {PotBakim} is set:
+							if player doesn't have permission "{@adminPanel}":
+								message "{@prefix}Jackpot girişleri kapalı gözüküyor!"
+								stop
+						if arg 2 is higher than {@fastestPotMaxGiris}:
+							message "{@prefix}Çok Hızlı Pota tek seferde en fazla &6{@fastestPotMaxGiris} &7bilet satın alabilirsin!"
+							stop
+						if {buTetiklendi} is set:
+							message "{@prefix}Çok Hızlı Pot birazdan döneceği için para yatıramıyorsunuz."
+							stop
+						if player's balance is higher than {@fastestPotBiletPara}*arg 2:
+							if {katilimFastest.%player%} is higher than {@fastestPotMaxGiris}:
+								message "{@prefix}Çok Hızlı Pot en fazla &6{@fastestPotMaxGiris} &7bilet ekleme girişiminde bulunabilirsin!"
+								stop
+							add arg 2 to {yatirilanBiletFastest.%player%}
+							loop arg 2 times:
+								add player to {biletListeFastest::*}
+							add arg 2 to {ticketSansBiletleriFastest.%player%}
+							add {@fastestPotBiletPara}*arg 2 to {mevcutPotFastest}
+							add {@fastestPotBiletPara}*arg 2 to {yatirilanMiktarFastest.%player%}
+							subtract {@fastestPotBiletPara}*arg 2 from {potKazancFastest.%player%}
+							subtract {@fastestPotBiletPara}*arg 2 from player's balance
+							if {katilimFastest.%player%} is smaller than {@fastestPotMaxGiris}:
+								add 1 to {katilimFastest.%player%}
+							if {katilmistimFastest.%player%} isn't set:
+								add player to {katilanlarFastest::*}
+								set {katilmistimFastest.%player%} to on
+								add 1 to {katilimKontrol}
+							add arg 2 to {FastestguncelBiletSayisi.%player%}
+							if {@biletDelay} is on:
+								if {FastestbiletParaDelayda.%player%} is not set:
+									if {@delaydaveMesajTeslimEt} is on:
+										message "{@prefix}Çok Hızlı Pota yatırdığınız biletler sisteme işlendi, birazdan bilgi mesajı geçilecek."
+									set {FastestbiletParaDelayda.%player%} to on
+									set {SiradaBiriVar} to on
+									wait 5 seconds
+									broadcast "{@prefix}&e%player% &7Çok Hızlı Pota &6+%{FastestguncelBiletSayisi.%player%}% bilet &7ekledi!"
+									broadcast "&7Çok Hızlı Pot devredilecek miktar: &6$%{mevcutPotFastest}%"
+									delete {FastestguncelBiletSayisi.%player%}
+									delete {FastestbiletParaDelayda.%player%}
+									delete {SiradaBiriVar}
+							else:
+								broadcast "{@prefix}&e%player% &7Çok Hızlı Pota &6+%arg 2% bilet &7ekledi!"
+								broadcast "&7Çok Hızlı Pot devredilecek miktar: &6$%{mevcutPotFastest}%"
+							if {katilimKontrol} is higher than {@fastestPotMaxKisi}-1:
+								if {buTetiklendi} is not set:
+									if {SiradaBiriVar} is not set:
+										execute console command "drawfastestkonsol"
+										set {buTetiklendi} to on
+										stop
+									else:
+										set {buTetiklendi} to on
+										broadcast "{@prefix}Çok Hızlı Pota şu an birisi para yatırdığı için devretmesi birkaç saniye ertelendi."
+										wait 5 seconds
+										execute console command "drawfastestkonsol"
+										stop
+			else if arg 1 is "sifirla" or "sıfırla":
+				if player has permission "{@adminPanel}":
+					message "{@prefix}Tüm bilgiler sıfırlandı!"
+					set {mevcutPot} to 0
+					clear {katilanlar::*}
+					loop all players:
+						clear {yatirilanMiktar.%loop-player%}
+						clear {katilmistim.%loop-player%}
+					broadcast "{@prefix}Jackpota katılmak için &a/jackpot &7yazabilirsin!"
+					set {kalanDk} to {@PotDakika}
+					set {kalanSn} to 1
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "sohbet":
+				if player has permission "{@adminPanel}":
+					clear {sohbetJackpot}
+					message "{@prefix}Başarıyla sohbet açıldı."
+			else if arg 1 is "ekstra":
+				if player has permission "{@adminPanel}":
+					if arg 2 is not set:
+						execute player command "/jackpot"
+					else:
+						broadcast "{@prefix}&e%player% &7{@classicPot}'a ekstra &6$%arg 2% &7ekledi!"
+						add arg 2 to {mevcutPot}
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "ekstrafaster":
+				if player has permission "{@adminPanel}":
+					if arg 2 is not set:
+						execute player command "/jackpot"
+					else:
+						broadcast "{@prefix}&e%player% &7Hızlı Pot'a ekstra &6$%arg 2% &7ekledi!"
+						add arg 2 to {mevcutPotFaster}
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "ekstrafastest":
+				if player has permission "{@adminPanel}":
+					if arg 2 is not set:
+						execute player command "/jackpot"
+					else:
+						broadcast "{@prefix}&e%player% &7Çok Hızlı Pot'a ekstra &6$%arg 2% &7ekledi!"
+						add arg 2 to {mevcutPotFastest}
+				else:
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+			else if arg 1 is "drawfastest":
+				if player doesn't have permission "{@adminPanel}":
+					message "{@prefix}Komutu kullanmak için gerekli yetkiniz bulunmuyor!"
+				else:
+					execute console command "drawfastestkonsol"
+					
+command /drawfastestkonsol:
+	executable by: players and console
+	permission: {@adminPanel}
+	permission message: Bu komut sadece konsol üzerinden kullanılabilir.
+	trigger:
+		if {@guiSistem} is off:
+			message "{@prefix}Bu özellik &6guiSistem &7kapalıyken çalışmamaktadır."
+		else:
+			if {katilanlarFastest::*} is smaller than {@fastestPotMinKisi}:
+				message "{@prefix}Çok Hızlı Pot'a yeterli kişi katılmamış."
+				stop
+			if {cekilmekte} is on:
+				broadcast "{@prefix}Halihazırda bir Jackpot çekiliyor olduğu için, Çok Hızlı Pot biraz sonra birden dönecek!"
+				wait 30 seconds
+				execute console command "jackpot drawfastest"
+				stop
+			broadcast "{@prefix}Şu an Çok Hızlı Pot sonuçları işleniyor, birazdan kazanan duyurulacak!"
+			wait 10 seconds
+			clear {kazananBiletHashFastest::*}
+			loop {biletListeFastest::*}:
+				add 1 to {RoundSayiFastest::%loop-value%}
+				set {biletListeFastest::KazananFastest} to random element of {biletListeFastest::*}
+			add 1 to {fastestPotSayi}
+			set {_sans} to {yatirilanMiktarFastest.%{biletListeFastest::KazananFastest}%}/{mevcutPotFastest}*100
+			if {@actionBarMesajlari} is on:
+				loop 3 times:
+					set action bar of all players to coloured "&6&lÇok Hızlı Pot» &7Kazanan kişi &6&o%{biletListeFastest::KazananFastest}% &7tebrikler! &6($%{mevcutPotFastest}%)"
+					wait 2 second
+			broadcast "&8&l&m---------------------------------------------"
+			broadcast " "
+			broadcast "                         &r&6&l» &c&lÇok Hızlı JackPot &6&l«"
+			broadcast "                         &7&lKAZANAN &6&l» &7&l%{biletListeFastest::KazananFastest}%"
+			broadcast "   &7Kazandığı Para &6- &7$%{mevcutPotFastest}%    &7Yatırdığı Para &6- &7$%{yatirilanMiktarFastest.%{biletListeFastest::KazananFastest}%}%"
+			broadcast "                           &7Toplam Kâr &6- &7$%{mevcutPotFastest}-{yatirilanMiktarFastest.%{biletListeFastest::KazananFastest}%}%"
+			broadcast "                               &7Şans &6- &7&l%%&7%{_sans}%"
+			broadcast " "
+			broadcast "&6(##%{fastestPotSayi}%&6) &7Bu Çok Hızlı Pot rounduna katılanlar: &7%{katilanlarFastest::*}%"
+			broadcast " "
+			broadcast "&8&l&m---------------------------------------------"
+			log "(##%{fastestPotSayi}% - FASTEST) rJackpot > %{biletListeFastest::KazananFastest}% adlı kişi, $%{mevcutPotFastest}% kazandı!" to "OlayLoglari.log"
+			add {mevcutPotFastest} to {biletListeFastest::KazananFastest}'s balance
+			add {mevcutPotFastest} to {potKazanc.%{biletListeFastest::KazananFastest}%}
+			add {mevcutPotFastest} to {toplamKazanc.%{biletListeFastest::KazananFastest}%}
+			set {GecmisKazananFastest} to {biletListeFastest::KazananFastest}
+			set {GecmisPotFastest} to {mevcutPotFastest}
+			set {GecmisSansFastest} to {_sans}
+			set {biletListeFastest::KazananFastest} to "&6%{biletListeFastest::KazananFastest}%&7"
+			add {biletListeFastest::*} to {kazananBiletHashFastest::*}
+			set {mevcutPotFastest} to 0
+			clear {katilanlarFastest::*}
+			clear {biletListeFastest::*}
+			clear {biletListeFastest::KazananFastest}
+			clear {katilanKisilerFastest}
+			clear {CekiliyorFastest}
+			clear {PotDolduFastest}
+			clear {PotKapandiFastest}
+			clear {sohbetJackpot}
+			clear {katilimKontrol}
+			delete {buTetiklendi}
+			loop all players:
+				clear {yatirilanMiktarFastest.%loop-player%}
+				clear {katilimFastest.%loop-player%}
+				clear {sonucFastest.%loop-player%}
+				clear {ticketToplamYuzdeFastest.%loop-player%}
+				clear {katilimFastest.%loop-player%}
+				clear {yatirilanHatirlatFastest.%loop-player%}
+				clear {yatirilanBiletFastest.%loop-player%}
+				clear {katilmistimFastest.%loop-player%}
+				clear {ticketSansBiletleriFastest.%loop-player%}
+						
+command /{@classicPot}:
+	trigger:
+		if {@guiSistem} is off:
+			message "{@prefix}Bu özellik &6guiSistem &7kapalıyken çalışmamaktadır."
+		else:
+			if {ticketSansBiletleri.%player%} is larger than 0:
+				loop all players:
+					if {ticketSansBiletleri.%loop-player%} is larger than 0:
+						add {ticketSansBiletleri.%loop-player%} to {ticketToplamYuzde.%player%}
+				add {ticketSansBiletleri.%player%}*100/{ticketToplamYuzde.%player%} to {sonuc.%player%}
+			if player has permission "{@adminPanel}":
+				open virtual chest with size 4 named "     &9&lJackpot » {@classicPot}" to player
+			else:
+				open virtual chest with size 3 named "     &9&lJackpot » {@classicPot}" to player
+			make gui slot 0 of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			loop 36 times:
+				make gui slot 0+loop-value of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			if {katilanlar::*} isn't set:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Jackpot rounduna kimse katılmamış!" to nothing
+			else:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Jackpot rounduna katılan oyuncular:||||&7%{katilanlar::*}%" to nothing
+			if {katilanlar::*} isn't set:
+				make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Daha kimse katılmadığı için pot bilgisi yok." to nothing
+			else:
+				if {katilmistim.%player%} is set:
+					set {_sans} to {yatirilanMiktar.%player%}/{mevcutPot}*100
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7$%{mevcutPot}%||&6Round numarası: &7##%{classicPotSayi} + 1%||&6Yatırdığın para: &7$%{yatirilanMiktar.%player%}%||&6Kazanma şansın: &7%{_sans}%%%" to nothing
+				else:
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7$%{mevcutPot}%||&6Round numarası: &7##%{classicPotSayi} + 1%" to nothing
+			if {GecmisKazanan} isn't set:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##Bilinmeyen &7numaralı oyuna ait bilgiler:||||&7Kazanan &6&l> &7Geçmiş kazanan bilgisi yok||&7Devredilen Para &6&l> &7Geçmiş round bilgisi yok||||&7Hash:||&7Geçmiş round bilgisi yok" to nothing
+			else:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##%{classicPotSayi}% &7numaralı oyuna ait bilgiler:||&7Kazanan &6&l> &7%{GecmisKazanan}%||&7Devredilen Para &6&l> &7%{GecmisPot}%||&7Şans &6&l> &7%{GecmisSans}%%%||||&7Hash: &6Bilgiye ulaşmak için yazıya tıklayın." to run:
+					message "&7Geçmiş oyunun bilet numaraları ve kazanan bilet:"
+					message "&7%{kazananBiletHash::*}%"
+			if {katilanlar::*} isn't set:
+				make gui slot 6 of player with redstone named "&6&lKalan Süre" with lore "&6Daha kimse katılmadığı için süre başlatılmadı." to nothing
+			else:
+				make gui slot 6 of player with clock named "&6&lKalan Süre" with lore "&6%{KalanDk}% &7dakika &6%{KalanSn}% &7saniye sonra para devredilecek!" to nothing
+			make gui slot 18 of player with diamond named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+1 bilet &7yatırırsın.||||&6Not: &7Jackpota hızlı bilet eklemek için||&6/jackpot yatır (miktar) classic &7kullanabilirsin." to run player command "jackpot yatır 1 classic"
+			make gui slot 19 of player with 3 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+3 bilet &7yatırırsın.||||&6Not: &7Jackpota hızlı bilet eklemek için||&6/jackpot yatır (miktar) classic &7kullanabilirsin." to run player command "jackpot yatır 3 classic"
+			make gui slot 20 of player with 5 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+5 bilet &7yatırırsın.||||&6Not: &7Jackpota hızlı bilet eklemek için||&6/jackpot yatır (miktar) classic &7kullanabilirsin." to run player command "jackpot yatır 5 classic"
+			make gui slot 26 of player with tripwire hook named "&6&lSayfayı yenile" with lore "&7Buraya tıklayarak menüyü yenileyebilirsin!" to run:
+				close player's inventory
+				make player execute "{@classicPot}"
+			if {RoundSayi::%player%} is set:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7Jackpotta &6%{RoundSayi::%player%}% &7round oyun oynamışsınız.||&7Jackpottan toplam kazancınız ise &6$%{toplamKazanc.%player%}%" to nothing
+			else:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7Jackpotta daha önce oynamamışsınız." to nothing
+			make gui slot 24 of player with tripwire hook named "&6&lGeriye dön" with lore "&7Buraya tıklayarak önceki sayfaya dönebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpot"
+			make gui slot 25 of player with tripwire hook named "&6&lHızlı Pot" with lore "&7Buraya tıklayarak &6Hızlı Pot &7sayfasına gidebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpotfaster"
+			make gui slot 14 of player with paper named "&6&lChat Jackpot Duyuruları" with lore "&7Chatte Jackpot dolum mesajlarını tıklayarak açıp kapatabilirsin." to run player command "jackpot mesaj"
+			if player has permission "{@adminPanel}":
+				make gui slot 27 of player with book and quill named "&6&lHızlı Çek &9&l(ADMIN)" with lore "&7Tıklarsanız Jackpot on saniye içerisinde para devreder." to run:
+					if player has permission "{@adminPanel}":
+						set {kalanDk} to 0
+						set {kalanSn} to 10
+					else:
+						message "{@prefix}Yetkiniz yok."
+				make gui slot 35 of player with book and quill named "&6&lPota Para Ekle &9&l(ADMIN)" with lore "&7Tıklarsanız sunucu kasasından pota para eklenir.||&7Klik başına, &6${@klikBonus} &7eklenmektedir." to run player command "jackpot ekstra {@klikBonus}"
+			clear {ticketToplamYuzde.%player%}
+			clear {sonuc.%player%}
+			
+command /jackpotfaster:
+	trigger:
+		if {@guiSistem} is off:
+			message "{@prefix}Bu özellik &6guiSistem &7kapalıyken çalışmamaktadır."
+		else:
+			if player has permission "{@adminPanel}":
+				open virtual chest with size 4 named "     &9&lJackpot » Hızlı Pot" to player
+			else:
+				open virtual chest with size 3 named "     &9&lJackpot » Hızlı Pot" to player
+			make gui slot 0 of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			loop 36 times:
+				make gui slot 0+loop-value of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			if {katilanlarFaster::*} isn't set:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Hızlı Pot rounduna kimse katılmamış!" to nothing
+			else:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Hızlı Pot rounduna katılan oyuncular:||||&7%{katilanlarFaster::*}%" to nothing
+			if {katilanlarFaster::*} isn't set:
+				make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Daha kimse katılmadığı için pot bilgisi yok." to nothing
+			else:
+				if {katilmistimFaster.%player%} is set:
+					set {_sans} to {yatirilanMiktarFaster.%player%}/{mevcutPotFaster}*100
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7$%{mevcutPotFaster}%||&6Round numarası: &7##%{fasterPotSayi} + 1%||&6Yatırdığın para: &7$%{yatirilanMiktarFaster.%player%}%||&6Kazanma şansın: &7%{_sans}%%%" to nothing
+				else:
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7%{mevcutPotFaster}%||&6Round numarası: &7##%{fasterPotSayi} + 1%" to nothing
+			if {GecmisKazananFaster} isn't set:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##Bilinmeyen &7numaralı oyuna ait bilgiler:||||&7Kazanan &6&l> &7Geçmiş kazanan bilgisi yok||&7Devredilen Para &6&l> &7Geçmiş round bilgisi yok||||&7Hash:||&7Geçmiş round bilgisi yok" to nothing
+			else:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##%{fasterPotSayi}% &7numaralı oyuna ait bilgiler:||&7Kazanan &6&l> &7%{GecmisKazananFaster}%||&7Devredilen Para &6&l> &7%{GecmisPotFaster}%||&7Şans &6&l> &7%{GecmisSansFaster}%%%||||&7Hash: &6Bilgiye ulaşmak için yazıya tıklayın." to run:
+					message "&7Geçmiş oyunun bilet numaraları ve kazanan bilet:"
+					message "&7%{kazananBiletHashFaster::*}%"
+			if {katilanlarFaster::*} isn't set:
+				make gui slot 6 of player with redstone named "&6&lKalan Süre" with lore "&6Daha kimse katılmadığı için süre başlatılmadı." to nothing
+			else:
+				make gui slot 6 of player with clock named "&6&lKalan Süre" with lore "&6%{KalanDkFaster}% &7dakika &6%{KalanSnFaster}% &7saniye sonra para devredilecek!" to nothing
+			make gui slot 18 of player with diamond named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+1 bilet &7yatırırsın.||||&6Not: &7Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) faster &7kullanabilirsin." to run player command "jackpot yatır 1 faster"
+			make gui slot 19 of player with 3 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+3 bilet &7yatırırsın.||||&6Not: &7Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) faster &7kullanabilirsin." to run player command "jackpot yatır 3 faster"
+			make gui slot 20 of player with 5 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+5 bilet &7yatırırsın.||||&6Not: &7Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) faster &7kullanabilirsin." to run player command "jackpot yatır 5 faster"
+			make gui slot 26 of player with tripwire hook named "&6&lSayfayı yenile" with lore "&7Buraya tıklayarak menüyü yenileyebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpotfaster"
+			if {RoundSayiFaster::%player%} is set:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7Hızlı Potta &6%{RoundSayiFaster::%player%}% &7round oyun oynamışsınız.||&7Hızlı Pottan toplam kazancınız ise &6$%{toplamKazanc.%player%}%" to nothing
+			else:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7Hızlı Potta daha önce oynamamışsınız." to nothing
+			make gui slot 24 of player with tripwire hook named "&6&lGeriye dön" with lore "&7Buraya tıklayarak önceki sayfaya dönebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpot"
+			make gui slot 25 of player with tripwire hook named "&6&lÇok Hızlı Pot" with lore "&7Buraya tıklayarak &6Çok Hızlı Pot &7sayfasına gidebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpotfastest"
+			make gui slot 14 of player with paper named "&6&lChat Jackpot Duyuruları" with lore "&7Chatte Jackpot dolum mesajlarını tıklayarak açıp kapatabilirsin." to run player command "jackpot mesaj"
+			if player has permission "{@adminPanel}":
+				make gui slot 27 of player with book and quill named "&6&lHızlı Çek &9&l(ADMIN)" with lore "&7Tıklarsanız Hızlı Pot on saniye içerisinde para devreder." to run:
+					if player has permission "{@adminPanel}":
+						set {kalanDkFaster} to 0
+						set {kalanSnFaster} to 10
+					else:
+						message "{@prefix}Yetkiniz yok."
+				make gui slot 35 of player with book and quill named "&6&lPota Para Ekle &9&l(ADMIN)" with lore "&7Tıklarsanız sunucu kasasından pota para eklenir.||&7Klik başına, &6${@klikBonus} &7eklenmektedir." to run player command "jackpot ekstrafaster {@klikBonus}"
+				
+command /jackpotfastest:
+	trigger:
+		if {@guiSistem} is off:
+			message "{@prefix}Bu özellik &6guiSistem &7kapalıyken çalışmamaktadır."
+		else:
+			if player has permission "{@adminPanel}":
+				open virtual chest with size 4 named "     &9&lJackpot » Çok Hızlı Pot" to player
+			else:
+				open virtual chest with size 3 named "     &9&lJackpot » Çok Hızlı Pot" to player
+			make gui slot 0 of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			loop 36 times:
+				make gui slot 0+loop-value of player with {@glassSusleme} named "&6{@glassBaslik}" to nothing
+			if {katilanlarFastest::*} isn't set:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Çok Hızlı Pot rounduna kimse katılmamış!" to nothing
+			else:
+				make gui slot 2 of player with sign item named "&6&lKatılanlar" with lore "&6Bu Çok Hızlı Pot rounduna katılan oyuncular:||||&7%{katilanlarFastest::*}%" to nothing
+			if {katilanlarFastest::*} isn't set:
+				make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Daha kimse katılmadığı için pot bilgisi yok." to nothing
+			else:
+				if {katilmistimFastest.%player%} is set:
+					set {_sans} to {yatirilanMiktarfastest.%player%}/{mevcutPotFastest}*100
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7$%{mevcutPotFastest}%||&6Round numarası: &7##%{fastestPotSayi} + 1%||&6Yatırdığın para: &7$%{yatirilanMiktarfastest.%player%}%||&6Kazanma şansın: &7%{_sans}%%%" to nothing
+				else:
+					make gui slot 4 of player with chest named "&6&lMevcut Durum" with lore "&6Devredilecek para: &7%{mevcutPotFastest}%||&6Round numarası: &7##%{fastestPotSayi} + 1%" to nothing
+			if {GecmisKazananfastest} isn't set:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##Bilinmeyen &7numaralı oyuna ait bilgiler:||||&7Kazanan &6&l> &7Geçmiş kazanan bilgisi yok||&7Devredilen Para &6&l> &7Geçmiş round bilgisi yok||||&7Hash:||&7Geçmiş round bilgisi yok" to nothing
+			else:
+				make gui slot 12 of player with map named "&6&lGeçmiş Round" with lore "&7&l##%{fastestPotSayi}% &7numaralı oyuna ait bilgiler:||&7Kazanan &6&l> &7%{GecmisKazananfastest}%||&7Devredilen Para &6&l> &7%{GecmisPotfastest}%||&7Şans &6&l> &7%{GecmisSansFastest}%%%||||&7Hash: &6Bilgiye ulaşmak için yazıya tıklayın." to run:
+					message "&7Geçmiş oyunun bilet numaraları ve kazanan bilet:"
+					message "&7%{kazananBiletHashfastest::*}%"
+			if {katilanlarFastest::*} isn't set:
+				make gui slot 6 of player with redstone named "&6&lKalan Kişi" with lore "&6Daha kimse katılmadığı için devredilemez." to nothing
+			else:
+				loop {katilanlarFastest::*}:
+					add 1 to {_kisiSayisi}
+				make gui slot 6 of player with clock named "&6&lKalan Kişi" with lore "&6%{@fastestPotMinKisi}-{_kisiSayisi}+1% &7kişi sonra başlayacak!" to nothing
+			make gui slot 18 of player with diamond named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+1 bilet &7yatırırsın.||||&6Not: &7Çok Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) fastest &7kullanabilirsin." to run player command "jackpot yatır 1 fastest"
+			make gui slot 19 of player with 3 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+3 bilet &7yatırırsın.||||&6Not: &7Çok Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) fastest &7kullanabilirsin." to run player command "jackpot yatır 3 fastest"
+			make gui slot 20 of player with 5 diamonds named "&6&lPara ekle" with lore "&7Buraya tıklayarak pota &6+5 bilet &7yatırırsın.||||&6Not: &7Çok Hızlı Pota hızlı bilet eklemek için||&6/jackpot yatır (miktar) fastest &7kullanabilirsin." to run player command "jackpot yatır 5 fastest"
+			make gui slot 26 of player with tripwire hook named "&6&lSayfayı yenile" with lore "&7Buraya tıklayarak menüyü yenileyebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpotfastest"
+			if {RoundSayiFastest::%player%} is set:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7Çok Hızlı Potta &6%{RoundSayiFastest::%player%}% &7round oyun oynamışsınız.||&7fastestPottan toplam kazancınız ise &6$%{toplamKazanc.%player%}%" to nothing
+			else:
+				make gui slot 22 of player with exp bottle named "&6&lGenel İstatistik" with lore "&7fastestPotta daha önce oynamamışsınız." to nothing
+			make gui slot 24 of player with tripwire hook named "&6&lGeriye dön" with lore "&7Buraya tıklayarak önceki sayfaya dönebilirsin!" to run:
+				close player's inventory
+				make player execute "jackpot"
+			make gui slot 25 of player with tripwire hook named "&6&l{@classicPot}" with lore "&7Buraya tıklayarak &6{@classicPot} &7sayfasına gidebilirsin!" to run:
+				close player's inventory
+				make player execute "{@classicPot}"
+			make gui slot 14 of player with paper named "&6&lChat Jackpot Duyuruları" with lore "&7Chatte Jackpot dolum mesajlarını tıklayarak açıp kapatabilirsin." to run player command "jackpot mesaj"
+			if player has permission "{@adminPanel}":
+				make gui slot 27 of player with book and quill named "&6&lHızlı Çek &9&l(ADMIN)" with lore "&7Tıklarsanız fastestPot direkt para devreder." to run console command "jackpot drawfastest"
+				make gui slot 35 of player with book and quill named "&6&lPota Para Ekle &9&l(ADMIN)" with lore "&7Tıklarsanız sunucu kasasından pota para eklenir.||&7Klik başına, &6${@klikBonus} &7eklenmektedir." to run player command "jackpot ekstrafastest {@klikBonus}"
