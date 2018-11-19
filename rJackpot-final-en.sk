@@ -1180,7 +1180,7 @@ command /jackpotfaster:
 				make gui slot 12 of player with map named "&6&lPrevious Round" with lore "&7Infos about round &l##Unknown:||||&7Winner &6&l> &7No previous winner||&7Earned Money &6&l> &7There's no info for previous round||||&7Hash:||&7There's no info for previous round" to nothing
 			else:
 				make gui slot 12 of player with map named "&6&lPrevious Round" with lore "&7Infos about round &l##%{fasterPotSayi}%:||&7Winner &6&l> &7%{GecmisWinnerFaster}%||&7Earned Money &6&l> &7%{GecmisPotFaster}%||&7Chance &6&l> &7%{GecmisSansFaster}%%%||||&7Hash: &6Click here to access the information." to run:
-					message "&7Geçmiş oyunun bilet numaraları ve Winner bilet:"
+					message "&7Previous round's ticket numbers and winner ticket:"
 					message "&7%{WinnerBiletHashFaster::*}%"
 			if {participantsFaster::*} isn't set:
 				make gui slot 6 of player with redstone named "&6&lRemaining time" with lore "&6Time has not been started because no one has joined." to nothing
@@ -1240,7 +1240,7 @@ command /jackpotfastest:
 				make gui slot 12 of player with map named "&6&lPrevious Round" with lore "&7Infos about round &l##Unknown:||||&7Winner &6&l> &7No previous winner||&7Earned Money &6&l> &7There's no info for previous round||||&7Hash:||&7There's no info for previous round" to nothing
 			else:
 				make gui slot 12 of player with map named "&6&lPrevious Round" with lore "&7Infos about the round &l##%{fastestPotSayi}%||&7Winner &6&l> &7%{GecmisWinnerfastest}%||&7Earned Money &6&l> &7%{GecmisPotfastest}%||&7Chance &6&l> &7%{GecmisSansFastest}%%%||||&7Hash: &6Click here to access the information." to run:
-					message "&7Geçmiş oyunun bilet numaraları ve Winner bilet:"
+					message "&7Previous round's ticket numbers and winner ticket:"
 					message "&7%{WinnerBiletHashfastest::*}%"
 			if {participantsFastest::*} isn't set:
 				make gui slot 6 of player with redstone named "&6&lRemaining participants" with lore "&6Nobody." to nothing
