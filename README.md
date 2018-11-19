@@ -1,5 +1,5 @@
 # rJackpot
-A jackpot minigame for Minecraft, written with Skript.
+A jackpot minigame for Minecraft, written with Skript. I have developed this skript 2 years ago and I don't use it anymore that's why I add this Skript to GitHub. It not might be optimized because I didn't update it for a long time.
 
 # Media:
 v1.0 > https://www.youtube.com/watch?v=gilt1rHW6qs
