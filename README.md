@@ -3,6 +3,7 @@ A jackpot minigame for Minecraft, written with Skript.
 
 # Media:
 v1.0 > https://www.youtube.com/watch?v=gilt1rHW6qs
+
 Final > https://www.youtube.com/watch?v=YLknEzm2B_g
 
 # How to use?:
